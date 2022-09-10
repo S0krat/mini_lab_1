@@ -6,7 +6,7 @@ import numpy as np
 
 from functools import partial
 from tkinter import *
-from tkinter.filedialog import asksaveasfile
+from tkinter.filedialog import asksaveasfile, askopenfile
 
 from matplotlib import pyplot as plt
 
@@ -36,6 +36,7 @@ class Entries:
             plot_button.pack_forget()
         self.parent_window.add_button('plot', 'Plot', 'plot', hot_key='<Return>')
         self.entries_list.append(new_entry)
+        return new_entry
 
 
 # class for plotting (класс для построения графиков)
@@ -153,8 +154,31 @@ class Commands:
         self.__forget_navigation()
         self.parent_window.entries.add_entry()
 
+    def delete_entry(self, *args, **kwargs):
+        del_entry = self.parent_window.focus_get()
+        if len(del_entry.get()) == 0:
+            self.parent_window.entries.entries_list.remove(del_entry)
+            del_entry.pack_forget()
+        else:
+            mw = ModalWindow(self.parent_window, title='Пустая строка', labeltext='не удоляй подумой')
+            ok_button = Button(master=mw.top, text='Впредь буду благоразумнее', command=mw.cancel)
+            mw.add_button(ok_button)
+
     def save_as(self):
         self._state.save_state()
+        return self
+
+    def load(self):
+        file = askopenfile(mode='r', filetypes=[('.json files', '*.json')])
+        if file is not None:
+            functions = eval(file.read())['list_of_function']
+            for entry in self.parent_window.entries.entries_list:
+                entry.pack_forget()
+            self.parent_window.entries.entries_list = []
+            for func in functions:
+                entry = self.parent_window.entries.add_entry()
+                entry.insert(0, func)
+            self.plot()
         return self
 
 
@@ -231,6 +255,7 @@ class App(Tk):
 
         file_menu = Menu(menu)
         file_menu.add_command(label="Save as...", command=self.commands.get_command_by_name('save_as'))
+        file_menu.add_command(label="Load", command=self.commands.get_command_by_name('load'))
         menu.add_cascade(label="File", menu=file_menu)
 
 
@@ -247,14 +272,16 @@ if __name__ == "__main__":
     # command's registration (регистрация команд)
     commands_main.add_command('plot', commands_main.plot)
     commands_main.add_command('add_func', commands_main.add_func)
+    commands_main.add_command('delete_entry', commands_main.delete_entry)
     commands_main.add_command('save_as', commands_main.save_as)
+    commands_main.add_command('load', commands_main.load)
     # init app (создаем экземпляр приложения)
     app = App(buttons_main, plotter_main, commands_main, entries_main)
     # init add func button (добавляем кнопку добавления новой функции)
     app.add_button('add_func', 'Добавить функцию', 'add_func', hot_key='<Control-a>')
+    app.add_button('delete_entry', 'Удалить поле', 'delete_entry', hot_key='<Control-d>')
     # init first entry (создаем первое поле ввода)
     entries_main.add_entry()
     app.create_menu()
-    # добавил комментарий для коммита
     # application launch (запуск "вечного" цикла приложеня)
     app.mainloop()
