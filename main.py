@@ -176,10 +176,25 @@ class Commands:
                 entry.pack_forget()
             self.parent_window.entries.entries_list = []
             for func in functions:
+                if not self.__empty_entry_counter and len(func) == 0:
+                    self.__empty_entry_counter = 1
+                    mw = ModalWindow(self.parent_window, title='Пустая строка', labeltext='Хотите удалить пустые '
+                                                                                          'строки?')
+                    yes_button = Button(master=mw.top, text='Да', command=lambda: (mw.cancel(),
+                                                                    self.parent_window.commands.delete_empty_entries()))
+                    no_button = Button(master=mw.top, text='Нет', command=mw.cancel)
+                    mw.add_button(yes_button)
+                    mw.add_button(no_button)
                 entry = self.parent_window.entries.add_entry()
                 entry.insert(0, func)
             self.plot()
         return self
+
+    def delete_empty_entries(self):
+        for entry in self.parent_window.entries.entries_list:
+            if len(entry.get()) == 0:
+                entry.pack_forget()
+                self.parent_window.entries.entries_list.remove(entry)
 
 
 # class for buttons storage (класс для хранения кнопок)
